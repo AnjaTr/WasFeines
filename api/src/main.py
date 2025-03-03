@@ -1,0 +1,1 @@
+from wasfeines.app import app
