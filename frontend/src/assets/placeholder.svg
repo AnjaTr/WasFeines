@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Bowl -->
+  <path fill="#f0f0f0" d="M20 65Q50 85 80 65L80 50Q50 75 20 50Z"/>
+  <path fill="#e0e0e0" d="M20 50Q50 25 80 50L80 65Q50 85 20 65Z"/>
+  
+  <!-- Noodles -->
+  <path fill="none" stroke="#ffd700" stroke-width="1.5" 
+        d="M25 55q5-2 10 0 5 2 10 0 5-2 10 0 5 2 10 0 5-2 10 0
+           M25 58q5-2 10 0 5 2 10 0 5-2 10 0 5 2 10 0 5-2 10 0
+           M25 61q5-2 10 0 5 2 10 0 5-2 10 0 5 2 10 0 5-2 10 0"/>
+</svg>
