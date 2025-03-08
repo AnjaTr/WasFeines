@@ -1,23 +1,12 @@
-import SwipeableViews from 'react-swipeable-views';
+import { Outlet } from 'react-router';
 
-import { MediaItemContainer, placeholderMediaItems } from './MediaItemContainer';
 import { AppNavigationBar } from './AppNavigationBar';
-
-const RecipeSwipeableView = () => {
-  return (
-    <SwipeableViews axis="y" containerStyle={{ height: "100vh" }}>
-      {placeholderMediaItems.map((item, index) => (
-        <MediaItemContainer key={index} item={item} />
-      ))}
-    </SwipeableViews>
-  );
-}
 
 export default function App() {
   return (
     <>
       <AppNavigationBar />
-      <RecipeSwipeableView />
+      <Outlet />
     </>
   );
 }

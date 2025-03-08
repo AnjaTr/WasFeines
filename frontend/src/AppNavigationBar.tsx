@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { NavLink } from "react-router";
 
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
@@ -18,44 +19,48 @@ import ChecklistIcon from '@mui/icons-material/Checklist';
 import RamenDiningIcon from '@mui/icons-material/RamenDining';
 
 export const AppNavigationBar = () => {
-  const [open, setOpen] = React.useState(false);
+    const [open, setOpen] = React.useState(false);
 
-  const DrawerList = (
-    <Box sx={{ width: 250 }} role="presentation" onClick={() => setOpen(false)}>
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon>
-              <RamenDiningIcon />
-            </ListItemIcon>
-            <ListItemText primary={"Recipes"} />
-          </ListItemButton>
-        </ListItem>
-        <Divider />
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon>
-              <ChecklistIcon />
-            </ListItemIcon>
-            <ListItemText primary={"My Lists"} />
-          </ListItemButton>
-        </ListItem>
-      </List>
-    </Box>
-  );
-  
+    const DrawerList = (
+        <Box sx={{ width: 250 }} role="presentation" onClick={() => setOpen(false)}>
+            <List>
+                <NavLink to="/recipes" style={{ textDecoration: "none", color: "inherit" }}>
+                    <ListItem disablePadding>
+                        <ListItemButton>
+                            <ListItemIcon>
+                                <RamenDiningIcon />
+                            </ListItemIcon>
+                            <ListItemText primary={"Recipes"} />
+                        </ListItemButton>
+                    </ListItem>
+                </NavLink>
+                <Divider />
+                <NavLink to="/lists" style={{ textDecoration: "none", color: "inherit" }}>
+                    <ListItem disablePadding>
+                        <ListItemButton>
+                            <ListItemIcon>
+                                <ChecklistIcon />
+                            </ListItemIcon>
+                            <ListItemText primary={"My Lists"} />
+                        </ListItemButton>
+                    </ListItem>
+                </NavLink>
+            </List>
+        </Box>
+    );
 
-  return (
-    <AppBar position="absolute" sx={{ background: "transparent", boxShadow: "none" }}>
-      <Drawer open={open} onClose={() => setOpen(false)}>
-        {DrawerList}
-      </Drawer>
-      <Toolbar>
-        <IconButton edge="start" color="inherit" aria-label="menu" onClick={(_) => setOpen(!open) }>
-          <MenuIcon />
-        </IconButton>
-        <Typography variant="h6">WasFeines</Typography>
-      </Toolbar>
-    </AppBar>
-  );
+
+    return (
+        <AppBar position="absolute" sx={{ background: "transparent", boxShadow: "none" }}>
+            <Drawer open={open} onClose={() => setOpen(false)}>
+                {DrawerList}
+            </Drawer>
+            <Toolbar>
+                <IconButton edge="start" color="inherit" aria-label="menu" onClick={(_) => setOpen(!open)}>
+                    <MenuIcon />
+                </IconButton>
+                <Typography variant="h6">WasFeines</Typography>
+            </Toolbar>
+        </AppBar>
+    );
 };
