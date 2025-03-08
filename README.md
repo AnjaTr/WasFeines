@@ -13,7 +13,6 @@ To set up local development of this application, install these prerequisites:
 Then, to start the backend:
 
 * `cd api/` Go to the `api/` directory
-* `uv install` Install backend dependencies (only has to be done on initial setup or if dependencies change)
 * `uv run fastapi dev` Run the FastAPI backend.
 
 Then, to start the frontend:
