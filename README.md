@@ -13,7 +13,7 @@ To set up local development of this application, install these prerequisites:
 Then, to start the backend:
 
 * `cd api/` Go to the `api/` directory
-* `uv run fastapi dev src/wasfeines/app.py` Run the FastAPI backend.
+* `uv run fastapi dev src/main.py` Run the FastAPI backend.
 
 Then, to start the frontend:
 
