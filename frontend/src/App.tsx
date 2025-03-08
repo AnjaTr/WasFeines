@@ -17,7 +17,6 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import InboxIcon from '@mui/icons-material/MoveToInbox';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import RamenDiningIcon from '@mui/icons-material/RamenDining';
 
