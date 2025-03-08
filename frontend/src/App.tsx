@@ -1,3 +1,5 @@
+import React from 'react';
+
 import SwipeableViews from 'react-swipeable-views';
 
 import AppBar from '@mui/material/AppBar';
@@ -8,6 +10,16 @@ import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
 import Rating from '@mui/material/Rating';
 import Card from '@mui/material/Card';
+import Drawer from '@mui/material/Drawer';
+import List from '@mui/material/List';
+import Divider from '@mui/material/Divider';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import InboxIcon from '@mui/icons-material/MoveToInbox';
+import ChecklistIcon from '@mui/icons-material/Checklist';
+import RamenDiningIcon from '@mui/icons-material/RamenDining';
 
 export type MediaItem = {
   type: "image" | "video";
@@ -20,11 +32,42 @@ const mediaItems: MediaItem[] = [
   { type: "image", src: "https://placehold.co/300x1020" }
 ];
 
+
 const TransparentAppBar = () => {
+  const [open, setOpen] = React.useState(false);
+
+  const DrawerList = (
+    <Box sx={{ width: 250 }} role="presentation" onClick={() => setOpen(false)}>
+      <List>
+        <ListItem disablePadding>
+          <ListItemButton>
+            <ListItemIcon>
+              <RamenDiningIcon />
+            </ListItemIcon>
+            <ListItemText primary={"Recipes"} />
+          </ListItemButton>
+        </ListItem>
+        <Divider />
+        <ListItem disablePadding>
+          <ListItemButton>
+            <ListItemIcon>
+              <ChecklistIcon />
+            </ListItemIcon>
+            <ListItemText primary={"My Lists"} />
+          </ListItemButton>
+        </ListItem>
+      </List>
+    </Box>
+  );
+  
+
   return (
     <AppBar position="absolute" sx={{ background: "transparent", boxShadow: "none" }}>
+      <Drawer open={open} onClose={() => setOpen(false)}>
+        {DrawerList}
+      </Drawer>
       <Toolbar>
-        <IconButton edge="start" color="inherit" aria-label="menu">
+        <IconButton edge="start" color="inherit" aria-label="menu" onClick={(_) => setOpen(!open) }>
           <MenuIcon />
         </IconButton>
         <Typography variant="h6">WasFeines</Typography>
