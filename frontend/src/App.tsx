@@ -9,8 +9,12 @@ import MenuIcon from '@mui/icons-material/Menu';
 import Rating from '@mui/material/Rating';
 import Card from '@mui/material/Card';
 
+export type MediaItem = {
+  type: "image" | "video";
+  src: string;
+};
 
-const mediaItems = [
+const mediaItems: MediaItem[] = [
   { type: "image", src: "https://placehold.co/200x1000/000000/FFFFFF/png" },
   { type: "image", src: "https://placehold.co/350x1080/FF0000/000000/png" },
   { type: "image", src: "https://placehold.co/300x1020" }
@@ -29,7 +33,11 @@ const TransparentAppBar = () => {
   );
 };
 
-const MediaItem = ({ item }) => {
+type MediaItemProps = {
+  item: MediaItem;
+};
+
+const MediaItemContainer: React.FC<MediaItemProps> = ({ item }) => {
   return (
     <Box sx={{ width: "100vw", height: "100vh", overflow: "hidden", position: "relative" }}>
       {item.type === "image" ? (
@@ -52,7 +60,7 @@ const TikTokClone = () => {
   return (
     <SwipeableViews axis="y" containerStyle={{ height: "100vh" }}>
       {mediaItems.map((item, index) => (
-        <MediaItem key={index} item={item} />
+        <MediaItemContainer key={index} item={item} />
       ))}
     </SwipeableViews>
   );
