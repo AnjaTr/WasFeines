@@ -1,32 +1,33 @@
 from typing import List
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, APIRouter
 
-from wasfeines.models import Recipe, Ingredient
+from wasfeines.models import Recipe
+from wasfeines.settings import Settings
+from wasfeines.storage.repository import S3StorageRepository
 
-recipes = [
-    Recipe(
-        name="Spaghetti Carbonara", 
-        description="Spaghetti Carbonara ist ein italienisches Nudelgericht aus Spaghetti, Speck, Eiern, Käse und Pfeffer.",
-        ingredients=[
-            Ingredient(name="Spaghetti", description="Spaghetti sind eine", amount=500, unit="g"),
-            Ingredient(name="Eier", description="Eier sind", amount=2, unit="pcs"),
-            Ingredient(name="Speck", description="Speck ist", amount=100, unit="g"),
-        ]
-    ),
-    Recipe(
-        name="Lasagne", 
-        description="Lasagne ist ein Nudelauflauf aus Italien. Die klassische Lasagne alla bolognese wird mit Fleischsauce, Béchamelsauce und Parmesan zubereitet.",
-        ingredients=[
-            Ingredient(name="Lasagneplatten", description="Lasagneplatten sind", amount=250, unit="g"),
-            Ingredient(name="Hackfleisch", description="Hackfleisch ist", amount=500, unit="g"),
-            Ingredient(name="Tomaten", description="Tomaten sind", amount=400, unit="g"),
-        ]
-    ),
-]
+api_v1_router = APIRouter()
 
-app = FastAPI()
-
-@app.get("/api/v1/recipes")
+@api_v1_router.get("/recipes")
 async def get_recipes(request: Request) -> List[Recipe]:
-    return recipes
+    repo: S3StorageRepository = request.app.state.storage_repository
+    return await repo.list_recipes()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI, settings: Settings):
+    app.state.settings = settings
+    app.state.storage_repository = S3StorageRepository(settings)
+    yield
+    print("Shutting down")
+
+def create_app() -> FastAPI:
+    settings = Settings()
+    app = FastAPI(
+        title="Wasfeines API",
+        description="API for Wasfeines",
+        version="0.1.0",
+        lifespan=lambda app: lifespan(app, settings),
+    )
+    app.include_router(api_v1_router, prefix="/api/v1")
+    return app

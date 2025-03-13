@@ -2,16 +2,12 @@ from dataclasses import dataclass
 from typing import List, Literal
 
 @dataclass
-class Ingredient:
+class Media:
     name: str
-    description: str
-    amount: float
-    unit: Literal["g", "ml", "pcs", "tsp", "tbsp"]
-
+    content_url: str
 
 @dataclass
 class Recipe:
     name: str
-    description: str
-    ingredients: List[Ingredient]
-    images: List[str] = None
+    content_url: str
+    media: List[Media]

@@ -1,6 +1,6 @@
-from .recipe import Recipe, Ingredient
+from .recipe import Recipe, Media
 
 __all__ = [
     "Recipe",
-    "Ingredient",
+    "Media",
 ]
