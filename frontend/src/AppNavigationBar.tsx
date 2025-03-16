@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { NavLink } from "react-router";
+import { NavLink, useLocation } from "react-router";
 
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
@@ -20,6 +20,10 @@ import RamenDiningIcon from '@mui/icons-material/RamenDining';
 
 export const AppNavigationBar = () => {
     const [open, setOpen] = React.useState(false);
+    const location = useLocation();
+
+    const color = location.pathname === "/recipes" ? "white" : "black";
+    const background = location.pathname === "/recipes" ? "transparent" : "white";
 
     const DrawerList = (
         <Box sx={{ width: 250 }} role="presentation" onClick={() => setOpen(false)}>
@@ -51,7 +55,7 @@ export const AppNavigationBar = () => {
 
 
     return (
-        <AppBar position="absolute" sx={{ background: "transparent", boxShadow: "none" }}>
+        <AppBar position="absolute" sx={{ background: background, boxShadow: "none", color: color }}>
             <Drawer open={open} onClose={() => setOpen(false)}>
                 {DrawerList}
             </Drawer>
