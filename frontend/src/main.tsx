@@ -17,7 +17,9 @@ createRoot(document.getElementById('root')!).render(
       <Routes>
         <Route path="/" element={<App />}>
           <Route path="/lists" element={<MyLists />} />
-          <Route path="/recipes" element={<RecipeSwipeableView />} />
+          <Route path="/recipes" element={<RecipeSwipeableView />}>
+            <Route path=":recipeId" element={<RecipeSwipeableView />} />
+          </Route>
           <Route index element={<RecipeSwipeableView />} />
         </Route>
       </Routes>
