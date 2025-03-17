@@ -31,19 +31,21 @@ export const RecipeDetailView: React.FC = ({ }) => {
     return (
     <SlideInWrapper>
         <Box sx={{ marginTop: "56px", height: "100dvh", width: "100dvw"}}>
-            <Button startIcon={<ArrowBackIosNew />} onClick={() => navigate(-1)}>
-            Back
-            </Button>
-            <Box sx={{ padding: "20px", overflow: "scroll", height: "100%" }}>
-                {recipeHtml !== "" && <div dangerouslySetInnerHTML={{ __html: recipeHtml }} />}
-            </Box>
-        </Box>
-        <Box sx={{ marginTop: "10px"}}>
-            {recipe && recipe.media.map((media, index) => (
-                <Box key={index}>
-                    <img src={media.content_url} alt="Media" style={{ width: "100%" }} />
+            <Box>
+                <Button startIcon={<ArrowBackIosNew />} onClick={() => navigate(-1)}>
+                Back
+                </Button>
+                <Box sx={{ padding: "0 20px", overflow: "scroll", height: "100%" }}>
+                    {recipeHtml !== "" && <div dangerouslySetInnerHTML={{ __html: recipeHtml }} />}
                 </Box>
-            ))}
+            </Box>
+            <Box sx={{ marginTop: "10px"}}>
+                {recipe && recipe.media.map((media, index) => (
+                    <Box key={index}>
+                        <img src={media.content_url} alt="Media" style={{ width: "100%" }} />
+                    </Box>
+                ))}
+            </Box>
         </Box>
     </SlideInWrapper>
     );

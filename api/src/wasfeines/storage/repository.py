@@ -2,8 +2,10 @@ from abc import ABC, abstractmethod
 from typing import List
 import asyncio
 from pathlib import Path
+import json
 
 import boto3
+from botocore.config import Config
 
 from wasfeines.models.recipe import Recipe, Media
 from wasfeines.models.draft import DraftRecipe
@@ -55,6 +57,53 @@ class S3StorageRepository(StorageRepository):
             aws_access_key_id=settings.s3_access_key,
             aws_secret_access_key=settings.s3_secret_key,
             region_name=settings.s3_region,
+            config=Config(
+                response_checksum_validation="when_required"
+            ),
+        )
+
+    def _load_item(self, key_html: str, objects: List) -> Recipe:
+        """
+        Given a recipe key, for example "recipe_Peanut_Protein_Balls.html", return the full recipe object
+
+        * Loading the associated recipe_Peanut_Protein_Balls.json, if it exists
+        * Loading all media files associated with the recipe
+        """
+        key_presigned = self.s3.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": self.settings.s3_bucket, "Key": key_html},
+            ExpiresIn=3600,
+        )
+        key_noext = key_html[:-5]
+        media = []
+        for obj_inner in objects["Contents"]:
+            key_inner = obj_inner["Key"]
+            if key_inner.startswith(key_noext) and is_media(key_inner):
+                key_inner_presigned = self.s3.generate_presigned_url(
+                    "get_object",
+                    Params={
+                        "Bucket": self.settings.s3_bucket,
+                        "Key": key_inner,
+                    },
+                    ExpiresIn=3600,
+                )
+                media.append(
+                    Media(name=key_inner, content_url=key_inner_presigned)
+                )
+        summary = None
+        for obj_inner in objects["Contents"]:
+            key_inner = obj_inner["Key"]
+            if key_inner == f"{key_noext}.json":
+                contents = self.s3.get_object(
+                    Bucket=self.settings.s3_bucket, Key=key_inner
+                )["Body"].read()
+                summary = json.loads(contents)
+
+        return Recipe(
+            name=key_noext,
+            content_url=key_presigned,
+            media=media,
+            summary=summary,
         )
 
     def list_recipes_sync(self) -> List[Recipe]:
@@ -65,34 +114,7 @@ class S3StorageRepository(StorageRepository):
         for obj in objects["Contents"]:
             key = obj["Key"]
             if key.endswith(".html"):
-                key_presigned = self.s3.generate_presigned_url(
-                    "get_object",
-                    Params={"Bucket": self.settings.s3_bucket, "Key": key},
-                    ExpiresIn=3600,
-                )
-                key_noext = key[:-5]
-                media = []
-                for obj_inner in objects["Contents"]:
-                    key_inner = obj_inner["Key"]
-                    if key_inner.startswith(key_noext) and is_media(key_inner):
-                        key_inner_presigned = self.s3.generate_presigned_url(
-                            "get_object",
-                            Params={
-                                "Bucket": self.settings.s3_bucket,
-                                "Key": key_inner,
-                            },
-                            ExpiresIn=3600,
-                        )
-                        media.append(
-                            Media(name=key_inner, content_url=key_inner_presigned)
-                        )
-                recipes.append(
-                    Recipe(
-                        name=key_noext,
-                        content_url=key_presigned,
-                        media=media,
-                    )
-                )
+                recipes.append(self._load_item(key, objects))
         return recipes
 
     def put_recipe_sync(self, recipe: DraftRecipe) -> Recipe:
