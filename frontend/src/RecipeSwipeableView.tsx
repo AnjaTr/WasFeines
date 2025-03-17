@@ -30,7 +30,6 @@ export const RecipeSwipeableView = () => {
   const recipes = state.recipes;
   return (
     <Box sx={{ height: "100dvh" }}>
-      { location.pathname === "/recipes" &&
       <SwipeableViews axis="y" containerStyle={{ height: "100dvh" }}>
         {recipes.map((item, index) => (
           <Box key={index}>
@@ -40,8 +39,7 @@ export const RecipeSwipeableView = () => {
           </Box>
         ))}
       </SwipeableViews>
-      }
-      { location.pathname !== "/recipes" && <Outlet /> }
+      <Outlet />
     </Box>
   );
 }

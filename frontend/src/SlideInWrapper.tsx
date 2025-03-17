@@ -9,16 +9,11 @@ const SlideInWrapper = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     setSlideIn(true);
-
-    // Reset slideIn after the animation completes (this may depend on the animation duration)
-    //const timer = setTimeout(() => setSlideIn(false), 300); // 300ms for slide transition
-
-    //return () => clearTimeout(timer);
   }, [location]);
 
   return (
     <Slide direction="left" in={slideIn} mountOnEnter unmountOnExit>
-      <Box sx={{ width: "100vw", height: "100dvh", overflow: "hidden", position: "relative" }}>
+      <Box position="absolute" top={0} sx={{ background: "white" }}>
         {children}
       </Box>
     </Slide>
