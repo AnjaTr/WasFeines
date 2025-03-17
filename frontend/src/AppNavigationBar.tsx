@@ -24,6 +24,7 @@ export const AppNavigationBar = () => {
 
     const color = location.pathname === "/recipes" ? "white" : "black";
     const background = location.pathname === "/recipes" ? "transparent" : "white";
+    const textShadow = location.pathname === "/recipes" ? "-1px -1px 0 rgba(0,0,0,0.5),  1px -1px 0 rgba(0,0,0,0.5), -1px  1px 0 rgba(0,0,0,0.5), 1px  1px 0 rgba(0,0,0,0.5)" : "none";
 
     const DrawerList = (
         <Box sx={{ width: 250 }} role="presentation" onClick={() => setOpen(false)}>
@@ -63,7 +64,7 @@ export const AppNavigationBar = () => {
                 <IconButton edge="start" color="inherit" aria-label="menu" onClick={(_) => setOpen(!open)}>
                     <MenuIcon />
                 </IconButton>
-                <Typography variant="h6">WasFeines</Typography>
+                <Typography sx={{ textShadow }} variant="h6">WasFeines</Typography>
             </Toolbar>
         </AppBar>
     );
