@@ -30,7 +30,7 @@ export const RecipeDetailView: React.FC = ({ }) => {
 
     return (
     <SlideInWrapper>
-        <Box sx={{ marginTop: "56px", height: "100dvh", width: "100dvw"}}>
+        <Box sx={{ marginTop: "56px", height: "100dvh", maxWidth: "600px" }}>
             <Box>
                 <Button startIcon={<ArrowBackIosNew />} onClick={() => navigate(-1)}>
                 Back

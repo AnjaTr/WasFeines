@@ -20,7 +20,7 @@ export const MediaItemContainer: React.FC<any> = ({ item }) => {
   const firstMediaItem = item.media[0].content_url;
   return (
     <Box
-      sx={{ width: "100vw", height: "100dvh", overflow: "hidden", position: "relative" }}>
+      sx={{  height: "100dvh", overflow: "hidden", position: "relative" }}>
       <img src={firstMediaItem} alt="Media" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       {
         item.summary && (<Card sx={{ position: "absolute", bottom: "3%", width: "85%", left: 0, right: 0, margin: "auto", padding: "10px" }}>
