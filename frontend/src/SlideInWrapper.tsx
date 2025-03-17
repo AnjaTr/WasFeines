@@ -18,7 +18,7 @@ const SlideInWrapper = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <Slide direction="left" in={slideIn} mountOnEnter unmountOnExit>
-      <Box sx={{ width: "100vw", height: "100vh", overflow: "hidden", position: "relative" }}>
+      <Box sx={{ width: "100vw", height: "100dvh", overflow: "hidden", position: "relative" }}>
         {children}
       </Box>
     </Slide>

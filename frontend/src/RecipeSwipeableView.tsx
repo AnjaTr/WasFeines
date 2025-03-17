@@ -29,9 +29,9 @@ export const RecipeSwipeableView = () => {
   }
   const recipes = state.recipes;
   return (
-    <Box sx={{ height: "100vh" }}>
+    <Box sx={{ height: "100dvh" }}>
       { location.pathname === "/recipes" &&
-      <SwipeableViews axis="y" containerStyle={{ height: "100vh" }}>
+      <SwipeableViews axis="y" containerStyle={{ height: "100dvh" }}>
         {recipes.map((item, index) => (
           <Box key={index}>
             <NavLink to={`/recipes/${index}`} style={{ textDecoration: "none" }}>
