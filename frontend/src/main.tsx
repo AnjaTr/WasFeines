@@ -11,6 +11,7 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import { RecipeDetailView } from './RecipeDetailView.tsx';
+import { RecipeAddView } from './RecipeAddView.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -22,6 +23,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/recipes/:recipeId" element={<RecipeDetailView />} />
           </Route>
           <Route index element={<RecipeSwipeableView />} />
+          <Route path="/add-recipe" element={<RecipeAddView />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -17,6 +17,8 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import RamenDiningIcon from '@mui/icons-material/RamenDining';
+import LibraryAddCheckOutlinedIcon from '@mui/icons-material/LibraryAddCheckOutlined';
+import { Fab } from '@mui/material';
 
 export const AppNavigationBar = () => {
     const [open, setOpen] = React.useState(false);
@@ -51,6 +53,12 @@ export const AppNavigationBar = () => {
                     </ListItem>
                 </NavLink>
             </List>
+            <NavLink to="/add-recipe" style={{ textDecoration: "none", color: "inherit" }}>
+                <Fab variant="extended" sx={{ position: "absolute", bottom: 20, left: 15 }}>
+                    <LibraryAddCheckOutlinedIcon sx={{ mr: 1 }} />
+                Add Recipe
+                </Fab>
+            </NavLink>
         </Box>
     );
 
