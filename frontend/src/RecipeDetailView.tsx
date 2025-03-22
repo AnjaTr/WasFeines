@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router";
 import { useRecipeContext } from "./context/RecipeProvider";
 import SlideInWrapper from "./SlideInWrapper";
-import { Box, Button, Paper } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import Skeleton from "@mui/material/Skeleton";
 import { ArrowBackIosNew } from "@mui/icons-material";
 import { useEffect, useState } from "react";

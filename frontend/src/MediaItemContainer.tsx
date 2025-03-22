@@ -6,6 +6,7 @@ import Typography from '@mui/material/Typography';
 import Rating from '@mui/material/Rating';
 import Card from '@mui/material/Card';
 import { Chip } from '@mui/material';
+import ImageWithSkeleton from './ImageWithSkeleton';
 
 export type MediaItemProps = {
   item: MediaItem;
@@ -21,7 +22,7 @@ export const MediaItemContainer: React.FC<any> = ({ item }) => {
   return (
     <Box
       sx={{  height: "100dvh", overflow: "hidden", position: "relative" }}>
-      <img src={firstMediaItem} alt="Media" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      <ImageWithSkeleton src={firstMediaItem} alt="Media" width="100%" height="100%" />
       {
         item.summary && (<Card sx={{ position: "absolute", bottom: "3%", width: "85%", left: 0, right: 0, margin: "auto", padding: "10px" }}>
           <Box>
