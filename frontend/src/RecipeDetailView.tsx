@@ -2,12 +2,22 @@ import { useNavigate, useParams } from "react-router";
 import { useRecipeContext } from "./context/RecipeProvider";
 import SlideInWrapper from "./SlideInWrapper";
 import { Box, Button, Paper } from "@mui/material";
+import Skeleton from "@mui/material/Skeleton";
 import { ArrowBackIosNew } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 
 export type RecipeDetailViewRouteParams = {
     recipeId: string;
 }
+
+const RecipeDetailViewSkeleton: React.FC = () => <Box sx={{ padding: "0 20px" }}>
+    <Skeleton variant="rectangular" height={50} />
+    <Skeleton variant="text" height={30} width="60%" />
+    <Skeleton variant="text" height={30} width="60%" />
+    <Skeleton variant="text" height={30} width="80%" />
+    <Skeleton variant="text" height={400} width="100%" />
+
+</Box>
 
 export const RecipeDetailView: React.FC = ({ }) => {
     const { recipeId } = useParams<RecipeDetailViewRouteParams>();
@@ -35,9 +45,11 @@ export const RecipeDetailView: React.FC = ({ }) => {
                 <Button startIcon={<ArrowBackIosNew />} onClick={() => navigate(-1)}>
                 Back
                 </Button>
-                <Box sx={{ padding: "0 20px", overflow: "scroll", height: "100%" }}>
+                { !recipeHtml && <RecipeDetailViewSkeleton />}
+                { recipeHtml && <Box sx={{ padding: "0 20px", overflow: "scroll", height: "100%" }}>
                     {recipeHtml !== "" && <div dangerouslySetInnerHTML={{ __html: recipeHtml }} />}
                 </Box>
+                }
             </Box>
             <Box sx={{ marginTop: "10px"}}>
                 {recipe && recipe.media.map((media, index) => (
