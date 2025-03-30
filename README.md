@@ -23,6 +23,8 @@ Then, to start the frontend:
 
 Note that both `uv run fastapi dev` and `npm run dev` need to run at the same time (so maybe in separate terminal windows). During local development, the `vite` development server will reverse proxy to the fastapi backend.
 
+An optional convenience script `./run.sh` is provided to start both frontend and backend.
+
 ## Testing
 
 To run Backend tests, make sure you are in the `api/` directory, then run:
