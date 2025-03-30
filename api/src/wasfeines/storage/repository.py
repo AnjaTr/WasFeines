@@ -1,13 +1,17 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, TYPE_CHECKING
 import asyncio
 from pathlib import Path
 import json
+from uuid import uuid4
 
 import boto3
 from botocore.config import Config
+if TYPE_CHECKING:
+    from mypy_boto3_s3.client import S3Client
 
 from wasfeines.models.recipe import Recipe, Media
+from wasfeines.models.draft import DraftMedia
 from wasfeines.models.draft import DraftRecipe
 from wasfeines.settings import Settings
 
@@ -25,6 +29,10 @@ class StorageRepository(ABC):
     def delete_recipe_sync(self, id: str) -> Recipe:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_draft_media_sync(self) -> List[DraftRecipe]:
+        raise NotImplementedError()
+
     async def list_recipes(self) -> List[Recipe]:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self.list_recipes_sync)
@@ -36,6 +44,10 @@ class StorageRepository(ABC):
     async def delete_recipe(self, id: str) -> Recipe:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self.delete_recipe_sync, id)
+
+    async def get_draft_media(self) -> List[DraftRecipe]:
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self.get_draft_media_sync)
 
 
 def is_media(key: str) -> bool:
@@ -51,7 +63,7 @@ def is_media(key: str) -> bool:
 class S3StorageRepository(StorageRepository):
     def __init__(self, settings: Settings):
         self.settings = settings
-        self.s3 = boto3.client(
+        self.s3: S3Client = boto3.client(
             "s3",
             endpoint_url=settings.s3_endpoint_url,
             aws_access_key_id=settings.s3_access_key,
@@ -143,3 +155,20 @@ class S3StorageRepository(StorageRepository):
             content_url="",
             media=[],
         )
+
+    def get_draft_media_sync(self) -> DraftMedia:
+        media_uuid = str(uuid4())
+        key = Path(self.settings.s3_bucket_base_path) / self.settings.s3_draft_folder / f"{media_uuid}"
+        media = DraftMedia(
+            get_url=self.s3.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": self.settings.s3_bucket, "Key": str(key)},
+                ExpiresIn=3600,
+            ),
+            put_url=self.s3.generate_presigned_url(
+                "put_object",
+                Params={"Bucket": self.settings.s3_bucket, "Key": str(key)},
+                ExpiresIn=3600,
+            ),
+        )
+        return media
