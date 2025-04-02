@@ -3,8 +3,10 @@ from typing import List, Optional
 
 @dataclass
 class DraftMedia:
+    exists: bool
     get_url: str
     put_url: str
+    delete_url: Optional[str] = None
 
 @dataclass
 class DraftRecipe:

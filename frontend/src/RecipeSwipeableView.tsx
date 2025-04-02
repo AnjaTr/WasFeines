@@ -13,6 +13,13 @@ export const RecipeSwipeableView = () => {
   useEffect(() => {
     dispatch({ type: "FETCH_RECIPES_START" });
     fetch("/api/v1/recipes")
+      .then((response) => {
+        if (response.status === 401) {
+            window.location.replace("/api/v1/login");
+            return Promise.reject("Unauthorized"); 
+        }
+        return response;
+      })
       .then(response => response.json())
       .then((data) => {
         dispatch({ type: "FETCH_RECIPES_SUCCESS", payload: data });

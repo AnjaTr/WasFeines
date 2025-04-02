@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import logging
 import sys
 
-from fastapi import FastAPI, Request, APIRouter, Depends
+from fastapi import FastAPI, Request, APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 from authlib.oauth1.client import OAuth1Client
@@ -12,31 +12,21 @@ from starlette.config import Config
 from starlette.middleware.sessions import SessionMiddleware
 from pydantic import TypeAdapter
 
-from wasfeines.models import Recipe
+from wasfeines.models import Recipe, User
 from wasfeines.models.draft import DraftMedia
 from wasfeines.settings import Settings
 from wasfeines.storage.repository import S3StorageRepository
-
-@dataclass
-class OIDCUser:
-    sub: str
-    name: str
-    email: str
-    picture: str
-    given_name: str
-    family_name: str
-
 
 log = logging.getLogger(__name__)
 
 api_v1_router = APIRouter()
 
-async def valid_user_session(request: Request) -> OIDCUser:
+async def valid_user_session(request: Request) -> User:
     if (user := request.session.get('user')) is None:
-        return RedirectResponse(url='/api/v1/login')
-    return TypeAdapter(OIDCUser).validate_python(user)
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return TypeAdapter(User).validate_python(user)
 
-ValidUser = Annotated[OIDCUser, Depends(valid_user_session)]
+ValidUser = Annotated[User, Depends(valid_user_session)]
 
 @api_v1_router.get("/recipes")
 async def get_recipes(request: Request, user: ValidUser) -> List[Recipe]:
@@ -45,9 +35,9 @@ async def get_recipes(request: Request, user: ValidUser) -> List[Recipe]:
     return await repo.list_recipes()
 
 @api_v1_router.get("/draftmedia")
-async def get_draft(request: Request) -> DraftMedia:
+async def get_draft(request: Request, user: ValidUser) -> List[DraftMedia]:
     repo: S3StorageRepository = request.app.state.storage_repository
-    return await repo.get_draft_media()
+    return await repo.get_draft_media(user.email)
 
 @api_v1_router.get('/login')
 async def login(request: Request):
@@ -55,8 +45,8 @@ async def login(request: Request):
     return await client.authorize_redirect(request, request.app.state.settings.oidc_redirect_uri)
 
 @api_v1_router.get('/whoami')
-async def whoami(request: Request):
-    return request.session.get('user')
+async def whoami(request: Request, user: ValidUser) -> User:
+    return user
 
 @api_v1_router.api_route('/auth', methods=['GET', 'POST'])
 async def auth(request: Request):

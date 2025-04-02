@@ -2,7 +2,7 @@
 
 # Commands with correct paths
 backend_cmd="uv run fastapi dev src/main.py"
-frontend_cmd="npm run dev"
+frontend_cmd="npx vite --host"
 
 # Function to start backend
 start_backend() {

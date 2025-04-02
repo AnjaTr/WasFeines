@@ -4,6 +4,7 @@ import asyncio
 from pathlib import Path
 import json
 from uuid import uuid4
+import logging
 
 import boto3
 from botocore.config import Config
@@ -15,6 +16,7 @@ from wasfeines.models.draft import DraftMedia
 from wasfeines.models.draft import DraftRecipe
 from wasfeines.settings import Settings
 
+log = logging.getLogger(__name__)
 
 class StorageRepository(ABC):
     @abstractmethod
@@ -30,7 +32,7 @@ class StorageRepository(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_draft_media_sync(self) -> List[DraftRecipe]:
+    def get_draft_media_sync(self) -> List[DraftMedia]:
         raise NotImplementedError()
 
     async def list_recipes(self) -> List[Recipe]:
@@ -45,9 +47,9 @@ class StorageRepository(ABC):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self.delete_recipe_sync, id)
 
-    async def get_draft_media(self) -> List[DraftRecipe]:
+    async def get_draft_media(self, user_id: str) -> List[DraftMedia]:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, self.get_draft_media_sync)
+        return await loop.run_in_executor(None, self.get_draft_media_sync, user_id)
 
 
 def is_media(key: str) -> bool:
@@ -156,19 +158,50 @@ class S3StorageRepository(StorageRepository):
             media=[],
         )
 
-    def get_draft_media_sync(self) -> DraftMedia:
-        media_uuid = str(uuid4())
-        key = Path(self.settings.s3_bucket_base_path) / self.settings.s3_draft_folder / f"{media_uuid}"
-        media = DraftMedia(
-            get_url=self.s3.generate_presigned_url(
-                "get_object",
-                Params={"Bucket": self.settings.s3_bucket, "Key": str(key)},
-                ExpiresIn=3600,
-            ),
-            put_url=self.s3.generate_presigned_url(
-                "put_object",
-                Params={"Bucket": self.settings.s3_bucket, "Key": str(key)},
-                ExpiresIn=3600,
-            ),
+    def _get_presigned_get_put_urls(self, key: str) -> tuple[str, str, str]:
+        get_url = self.s3.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": self.settings.s3_bucket, "Key": key},
+            ExpiresIn=3600,
         )
-        return media
+        put_url = self.s3.generate_presigned_url(
+            "put_object",
+            Params={"Bucket": self.settings.s3_bucket, "Key": key},
+            ExpiresIn=3600,
+        )
+        delete_url = self.s3.generate_presigned_url(
+            "delete_object",
+            Params={"Bucket": self.settings.s3_bucket, "Key": key},
+            ExpiresIn=3600,
+        )
+        return get_url, put_url, delete_url
+
+    def get_draft_media_sync(self, user_id: str) -> List[DraftMedia]:
+        key = Path(self.settings.s3_bucket_base_path) / self.settings.s3_draft_folder / f"{user_id}"
+        existing_objects = self.s3.list_objects_v2(
+            Bucket=self.settings.s3_bucket, Prefix=str(key)
+        )
+        draft_media = []
+        if existing_objects["KeyCount"] > 0:
+            for obj in existing_objects["Contents"]:
+                key_inner = obj["Key"]
+                get_url, put_url, delete_url = self._get_presigned_get_put_urls(key_inner)
+                draft_media.append(
+                    DraftMedia(
+                        exists=True,
+                        get_url=get_url,
+                        put_url=put_url,
+                        delete_url=delete_url,
+                    )
+                )
+        uuid = str(uuid4())
+        key = Path(self.settings.s3_bucket_base_path) / self.settings.s3_draft_folder / f"{user_id}/{uuid}"
+        get_url, put_url, _ = self._get_presigned_get_put_urls(str(key))
+        draft_media.append(
+            DraftMedia(
+                exists=False,
+                get_url=get_url,
+                put_url=put_url,
+            )
+        )
+        return draft_media
