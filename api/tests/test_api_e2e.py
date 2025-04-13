@@ -43,3 +43,25 @@ def test_e2e_api_draft_media(app):
         assert resp.status_code == 200
         json4 = resp.json()
         assert len(json4) == length, "Expected the draft media item to be deleted"
+
+def test_e2e_api_draft_recipe(app):
+    with TestClient(app) as client:
+        try:
+            resp = client.get("/api/v1/draftrecipe")
+            assert resp.status_code == 404
+
+            resp = client.post("/api/v1/draftrecipe", json={
+                "name": "Test Recipe",
+                "user_content": "This is a test recipe.",
+                "user_tags": ["test", "recipe"],
+                "user_rating": {
+                    "rating": 5,
+                    "comment": "test_user@email.com"
+                }
+            })
+            assert resp.status_code == 200
+            json = resp.json()
+            assert json["name"] == "Test Recipe"
+        finally:
+            resp = client.delete("/api/v1/draftrecipe")
+            assert resp.status_code == 200

@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, Optional
 import asyncio
 from pathlib import Path
 import json
 from uuid import uuid4
+from dataclasses import asdict
 import logging
 
+from pydantic import TypeAdapter
 import boto3
 from botocore.config import Config
 if TYPE_CHECKING:
@@ -13,7 +15,7 @@ if TYPE_CHECKING:
 
 from wasfeines.models.recipe import Recipe, Media
 from wasfeines.models.draft import DraftMedia
-from wasfeines.models.draft import DraftRecipe
+from wasfeines.models.draft import DraftRecipe, DraftRecipeRequestModel
 from wasfeines.settings import Settings
 
 log = logging.getLogger(__name__)
@@ -35,6 +37,18 @@ class StorageRepository(ABC):
     def get_draft_media_sync(self) -> List[DraftMedia]:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_draft_recipe_sync(self, user_id: str) -> DraftRecipe:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def put_draft_recipe_sync(self, user_id: str, recipe: DraftRecipeRequestModel) -> DraftRecipe:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete_draft_recipe_sync(self, user_id: str) -> bool:
+        raise NotImplementedError()
+
     async def list_recipes(self) -> List[Recipe]:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self.list_recipes_sync)
@@ -50,6 +64,19 @@ class StorageRepository(ABC):
     async def get_draft_media(self, user_id: str) -> List[DraftMedia]:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self.get_draft_media_sync, user_id)
+
+    async def get_draft_recipe(self, user_id: str) -> DraftRecipe:
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self.get_draft_recipe_sync, user_id)
+
+    async def put_draft_recipe(self, user_id: str, recipe: DraftRecipeRequestModel) -> DraftRecipe:
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self.put_draft_recipe_sync, user_id, recipe)
+
+    async def delete_draft_recipe(self, user_id: str) -> bool:
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self.delete_draft_recipe_sync, user_id)
+
 
 
 def is_media(key: str) -> bool:
@@ -71,9 +98,6 @@ class S3StorageRepository(StorageRepository):
             aws_access_key_id=settings.s3_access_key,
             aws_secret_access_key=settings.s3_secret_key,
             region_name=settings.s3_region,
-            config=Config(
-                response_checksum_validation="when_required"
-            ),
         )
 
     def _load_item(self, key_html: str, objects: List) -> Recipe:
@@ -205,3 +229,34 @@ class S3StorageRepository(StorageRepository):
             )
         )
         return draft_media
+
+    def get_draft_recipe_sync(self, user_id: str) -> Optional[DraftRecipe]:
+        key = Path(self.settings.s3_bucket_base_path) / self.settings.s3_draft_folder / f"{user_id}-draft.json"
+        try:
+            existing_object = self.s3.get_object(
+                Bucket=self.settings.s3_bucket, Key=str(key)
+            )
+        except self.s3.exceptions.NoSuchKey:
+            return None
+        contents = existing_object["Body"].read()
+        draft_recipe = TypeAdapter(DraftRecipe).validate_json(contents)
+        return draft_recipe
+
+    def put_draft_recipe_sync(self, user_id: str, recipe: DraftRecipeRequestModel) -> DraftRecipe:
+        key = Path(self.settings.s3_bucket_base_path) / self.settings.s3_draft_folder / f"{user_id}-draft.json"
+        json_dict = asdict(recipe.to_draft_recipe(created_by=user_id))
+        self.s3.put_object(
+            Bucket=self.settings.s3_bucket,
+            Key=str(key),
+            Body=json.dumps(json_dict, default=str),
+            ContentType="application/json",
+        )
+        return self.get_draft_recipe_sync(user_id)
+
+    def delete_draft_recipe_sync(self, user_id):
+        key = Path(self.settings.s3_bucket_base_path) / self.settings.s3_draft_folder / f"{user_id}-draft.json"
+        try:
+            self.s3.delete_object(Bucket=self.settings.s3_bucket, Key=str(key))
+            return True
+        except self.s3.exceptions.NoSuchKey:
+            return False

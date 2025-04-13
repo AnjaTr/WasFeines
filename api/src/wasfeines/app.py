@@ -1,6 +1,5 @@
 from typing import List, Annotated
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
 import logging
 import sys
 
@@ -8,12 +7,13 @@ from fastapi import FastAPI, Request, APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 from authlib.oauth1.client import OAuth1Client
-from starlette.config import Config
+from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 from pydantic import TypeAdapter
 
 from wasfeines.models import Recipe, User
-from wasfeines.models.draft import DraftMedia
+from wasfeines.models.draft import DraftMedia, DraftRecipeResponseModel, DraftRecipeRequestModel
+from wasfeines.models.message import MessageResponse
 from wasfeines.settings import Settings
 from wasfeines.storage.repository import S3StorageRepository
 
@@ -38,6 +38,34 @@ async def get_recipes(request: Request, user: ValidUser) -> List[Recipe]:
 async def get_draft(request: Request, user: ValidUser) -> List[DraftMedia]:
     repo: S3StorageRepository = request.app.state.storage_repository
     return await repo.get_draft_media(user.email)
+
+@api_v1_router.get('/draftrecipe', response_model=DraftMedia, responses={
+    404: { "model": MessageResponse, "description": "Draft recipe not found" },
+})
+async def get_draft_recipe(request: Request, user: ValidUser) -> DraftRecipeResponseModel | JSONResponse:
+    repo: S3StorageRepository = request.app.state.storage_repository
+    draft_recipe = await repo.get_draft_recipe(user.email)
+    if draft_recipe is None:
+        return JSONResponse(status_code=404, content={"detail": "Draft recipe not found"})
+    draft_media = await repo.get_draft_media(user.email)
+    return draft_recipe.to_response_model(draft_media)
+
+@api_v1_router.post('/draftrecipe', response_model=DraftRecipeResponseModel)
+async def post_draft_recipe(request: Request, user: ValidUser, recipe: DraftRecipeRequestModel) -> DraftRecipeResponseModel:
+    repo: S3StorageRepository = request.app.state.storage_repository
+    draft_recipe = await repo.put_draft_recipe(user_id=user.email, recipe=recipe)
+    draft_media = await repo.get_draft_media(user.email)
+    return draft_recipe.to_response_model(draft_media)
+
+@api_v1_router.delete('/draftrecipe', response_model=MessageResponse, responses={
+    404: { "model": MessageResponse, "description": "Draft recipe not found" },
+})
+async def delete_draft_recipe(request: Request, user: ValidUser) -> MessageResponse | JSONResponse:
+    repo: S3StorageRepository = request.app.state.storage_repository
+    draft_recipe = await repo.delete_draft_recipe(user_id=user.email)
+    if draft_recipe is None:
+        return JSONResponse(status_code=404, content={"detail": "Draft recipe not found"})
+    return MessageResponse(detail="Draft recipe deleted successfully")
 
 @api_v1_router.get('/login')
 async def login(request: Request):

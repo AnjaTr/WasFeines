@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "authlib>=1.5.1",
-    "boto3>=1.37.9",
+    "boto3==1.35.99",
     "fastapi[standard]>=0.115.11",
     "itsdangerous>=2.2.0",
     "pydantic-settings>=2.8.1",
