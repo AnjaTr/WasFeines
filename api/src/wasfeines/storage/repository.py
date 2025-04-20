@@ -203,7 +203,7 @@ class S3StorageRepository(StorageRepository):
     def get_draft_media_sync(self, user_id: str) -> List[DraftMedia]:
         key = Path(self.settings.s3_bucket_base_path) / self.settings.s3_draft_folder / f"{user_id}"
         existing_objects = self.s3.list_objects_v2(
-            Bucket=self.settings.s3_bucket, Prefix=str(key)
+            Bucket=self.settings.s3_bucket, Prefix=f"{key}/"
         )
         draft_media = []
         if existing_objects["KeyCount"] > 0:
@@ -216,18 +216,20 @@ class S3StorageRepository(StorageRepository):
                         get_url=get_url,
                         put_url=put_url,
                         delete_url=delete_url,
+                        create_timestamp=obj["LastModified"].timestamp(),
                     )
                 )
-        uuid = str(uuid4())
-        key = Path(self.settings.s3_bucket_base_path) / self.settings.s3_draft_folder / f"{user_id}/{uuid}"
-        get_url, put_url, _ = self._get_presigned_get_put_urls(str(key))
-        draft_media.append(
-            DraftMedia(
-                exists=False,
-                get_url=get_url,
-                put_url=put_url,
+        for i in range(self.settings.max_num_draft_media - len(draft_media)):
+            uuid = str(uuid4())
+            key = Path(self.settings.s3_bucket_base_path) / self.settings.s3_draft_folder / f"{user_id}/{uuid}"
+            get_url, put_url, _ = self._get_presigned_get_put_urls(str(key))
+            draft_media.append(
+                DraftMedia(
+                    exists=False,
+                    get_url=get_url,
+                    put_url=put_url,
+                )
             )
-        )
         return draft_media
 
     def get_draft_recipe_sync(self, user_id: str) -> Optional[DraftRecipe]:

@@ -21,16 +21,171 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/draftmedia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Draft */
+        get: operations["get_draft_api_v1_draftmedia_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/draftrecipe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Draft Recipe */
+        get: operations["get_draft_recipe_api_v1_draftrecipe_get"];
+        put?: never;
+        /** Post Draft Recipe */
+        post: operations["post_draft_recipe_api_v1_draftrecipe_post"];
+        /** Delete Draft Recipe */
+        delete: operations["delete_draft_recipe_api_v1_draftrecipe_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Login */
+        get: operations["login_api_v1_login_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/whoami": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whoami */
+        get: operations["whoami_api_v1_whoami_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Auth */
+        get: operations["auth_api_v1_auth_post"];
+        put?: never;
+        /** Auth */
+        post: operations["auth_api_v1_auth_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** DraftMedia */
+        DraftMedia: {
+            /** Exists */
+            exists: boolean;
+            /** Get Url */
+            get_url: string;
+            /** Put Url */
+            put_url: string;
+            /** Delete Url */
+            delete_url?: string | null;
+            /** Create Timestamp */
+            create_timestamp?: number | null;
+        };
+        /** DraftRecipeRequestModel */
+        DraftRecipeRequestModel: {
+            /** Name */
+            name: string | null;
+            /** User Content */
+            user_content: string | null;
+            /** User Tags */
+            user_tags: string[] | null;
+            user_rating: components["schemas"]["RatingRequestModel"] | null;
+        };
+        /** DraftRecipeResponseModel */
+        DraftRecipeResponseModel: {
+            /** Name */
+            name: string;
+            /** User Content */
+            user_content: string | null;
+            /** User Tags */
+            user_tags: string[] | null;
+            /** Ratings */
+            ratings: components["schemas"]["Rating"][] | null;
+            /** Draft Media */
+            draft_media: components["schemas"]["DraftMedia"][];
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
         /** Media */
         Media: {
             /** Name */
             name: string;
             /** Content Url */
             content_url: string;
+        };
+        /** MessageResponse */
+        MessageResponse: {
+            /** Detail */
+            detail: string;
+        };
+        /** Rating */
+        Rating: {
+            /** Created By */
+            created_by: string;
+            /**
+             * Created Date
+             * Format: date-time
+             */
+            created_date: string;
+            /** Rating */
+            rating: number;
+            /** Comment */
+            comment: string | null;
+        };
+        /** RatingRequestModel */
+        RatingRequestModel: {
+            /** Rating */
+            rating: number;
+            /** Comment */
+            comment: string | null;
         };
         /** Recipe */
         Recipe: {
@@ -42,8 +197,32 @@ export interface components {
             media: components["schemas"]["Media"][];
             /** Summary */
             summary: {
-                [key: string]: string;
+                [key: string]: string | string[] | number;
             } | null;
+        };
+        /** User */
+        User: {
+            /** Sub */
+            sub: string;
+            /** Name */
+            name: string;
+            /** Email */
+            email: string;
+            /** Picture */
+            picture: string;
+            /** Given Name */
+            given_name: string;
+            /** Family Name */
+            family_name: string;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
         };
     };
     responses: never;
@@ -70,6 +249,197 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Recipe"][];
+                };
+            };
+        };
+    };
+    get_draft_api_v1_draftmedia_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftMedia"][];
+                };
+            };
+        };
+    };
+    get_draft_recipe_api_v1_draftrecipe_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftRecipeResponseModel"];
+                };
+            };
+            /** @description Draft recipe not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+        };
+    };
+    post_draft_recipe_api_v1_draftrecipe_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftRecipeRequestModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftRecipeResponseModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_draft_recipe_api_v1_draftrecipe_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Draft recipe not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+        };
+    };
+    login_api_v1_login_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    whoami_api_v1_whoami_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+        };
+    };
+    auth_api_v1_auth_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    auth_api_v1_auth_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };

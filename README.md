@@ -38,5 +38,5 @@ uv run pytest
 This project uses generated typings based on OpenAPI schemas in the frontend. You need to regenerate typings every time there is an API change in the Backend. To (re)generate frontend typings, first run the backend, then execute from the root folder of this project:
 
 ```bash
-npx openapi-typescript http://localhost:8000/openapi.json -o frontend/src/api/schema.d.ts
+npx openapi-typescript http://localhost:8000/api/openapi.json -o frontend/src/api/schema.d.ts
 ```

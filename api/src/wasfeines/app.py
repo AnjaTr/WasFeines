@@ -39,7 +39,7 @@ async def get_draft(request: Request, user: ValidUser) -> List[DraftMedia]:
     repo: S3StorageRepository = request.app.state.storage_repository
     return await repo.get_draft_media(user.email)
 
-@api_v1_router.get('/draftrecipe', response_model=DraftMedia, responses={
+@api_v1_router.get('/draftrecipe', response_model=DraftRecipeResponseModel, responses={
     404: { "model": MessageResponse, "description": "Draft recipe not found" },
 })
 async def get_draft_recipe(request: Request, user: ValidUser) -> DraftRecipeResponseModel | JSONResponse:
@@ -119,6 +119,8 @@ def create_app() -> FastAPI:
         description="API for Wasfeines",
         version="0.1.0",
         lifespan=lambda app: lifespan(app, settings),
+        docs_url="/api/docs",
+        openapi_url="/api/openapi.json",
     )
     app.add_middleware(SessionMiddleware, secret_key=settings.app_secret_key)
     app.include_router(api_v1_router, prefix="/api/v1")

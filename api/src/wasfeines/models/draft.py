@@ -9,6 +9,7 @@ class DraftMedia:
     get_url: str
     put_url: str
     delete_url: Optional[str] = None
+    create_timestamp: Optional[float] = None
 
 @dataclass
 class DraftRecipeResponseModel:

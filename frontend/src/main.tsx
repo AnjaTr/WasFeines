@@ -12,9 +12,13 @@ import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import { RecipeDetailView } from './RecipeDetailView.tsx';
 import { RecipeAddView } from './RecipeAddView.tsx';
+import { QueryClientProvider } from '@tanstack/react-query';
+import {queryClient} from './api/client';
+
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />}>
@@ -27,5 +31,6 @@ createRoot(document.getElementById('root')!).render(
         </Route>
       </Routes>
     </BrowserRouter>
+    </QueryClientProvider>
   </StrictMode>,
 )
