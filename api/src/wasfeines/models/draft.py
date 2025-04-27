@@ -6,6 +6,8 @@ from wasfeines.models.rating import Rating, RatingRequestModel
 @dataclass
 class DraftMedia:
     exists: bool
+    name: str
+    key: str
     get_url: str
     put_url: str
     delete_url: Optional[str] = None
@@ -19,9 +21,10 @@ class DraftRecipeResponseModel:
     ratings: Optional[List[Rating]]
     draft_media: List[DraftMedia]
 
-@dataclass
+@dataclass(kw_only=True)
 class DraftRecipe:
     name: str
+    key: Optional[str]
     created_by: str
     user_content: Optional[str]
     user_tags: Optional[List[str]]
@@ -36,7 +39,7 @@ class DraftRecipe:
             draft_media=draft_media
         )
 
-@dataclass
+@dataclass(kw_only=True)
 class DraftRecipeRequestModel:
     name: Optional[str]
     user_content: Optional[str]
@@ -49,6 +52,7 @@ class DraftRecipeRequestModel:
         ) -> DraftRecipe:
         return DraftRecipe(
             name=self.name,
+            key=None,
             created_by=created_by,
             user_content=self.user_content,
             user_tags=self.user_tags,

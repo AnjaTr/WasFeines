@@ -87,7 +87,7 @@ export const RecipeAddView: React.FC<RecipeAddViewProps> = () => {
         }
     };
 
-    const handleDelete = (tagToDelete) => {
+    const handleDelete = (tagToDelete: string) => {
         setTags(tags.filter(tag => tag !== tagToDelete));
         debouncedUpdate({ user_tags: tags.filter(tag => tag !== tagToDelete) })
     };
@@ -97,6 +97,7 @@ export const RecipeAddView: React.FC<RecipeAddViewProps> = () => {
     return <Box sx={{ margin: "55px 0 0 0", padding: "0 15px" }}>
         <Button
             component="label"
+            sx={{ marginTop: "10px" }}
             role={undefined}
             variant="contained"
             tabIndex={-1}

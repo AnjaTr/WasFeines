@@ -19,5 +19,6 @@ class Settings(BaseSettings):
     oidc_redirect_uri: str = Field(alias='OIDC_REDIRECT_URI')
     app_secret_key: str = Field(alias='APP_SECRET_KEY')
     max_num_draft_media: int = Field(alias='MAX_NUM_DRAFT_MEDIA', default=10, description="Number of draft media items to send to client on request")
+    anthropic_api_key: str = Field(alias='ANTHROPIC_API_KEY')
 
     model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8')

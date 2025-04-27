@@ -1,4 +1,4 @@
-from typing import List, Annotated
+from typing import List, Annotated, Any
 from contextlib import asynccontextmanager
 import logging
 import sys
@@ -16,6 +16,7 @@ from wasfeines.models.draft import DraftMedia, DraftRecipeResponseModel, DraftRe
 from wasfeines.models.message import MessageResponse
 from wasfeines.settings import Settings
 from wasfeines.storage.repository import S3StorageRepository
+from wasfeines.llm.anthropic_recipe_service import AnthropicRecipeService
 
 log = logging.getLogger(__name__)
 
@@ -39,14 +40,18 @@ async def get_draft(request: Request, user: ValidUser) -> List[DraftMedia]:
     repo: S3StorageRepository = request.app.state.storage_repository
     return await repo.get_draft_media(user.email)
 
-@api_v1_router.get('/draftrecipe', response_model=DraftRecipeResponseModel, responses={
-    404: { "model": MessageResponse, "description": "Draft recipe not found" },
-})
-async def get_draft_recipe(request: Request, user: ValidUser) -> DraftRecipeResponseModel | JSONResponse:
+@api_v1_router.get('/draftrecipe', response_model=DraftRecipeResponseModel)
+async def get_draft_recipe(request: Request, user: ValidUser) -> DraftRecipeResponseModel:
     repo: S3StorageRepository = request.app.state.storage_repository
     draft_recipe = await repo.get_draft_recipe(user.email)
     if draft_recipe is None:
-        return JSONResponse(status_code=404, content={"detail": "Draft recipe not found"})
+        draft_media = await repo.get_draft_media(user.email)
+        return (await repo.put_draft_recipe(user_id=user.email, recipe=DraftRecipeRequestModel(
+            name=None,
+            user_content=None,
+            user_tags=None,
+            user_rating=None,
+        ))).to_response_model(draft_media)
     draft_media = await repo.get_draft_media(user.email)
     return draft_recipe.to_response_model(draft_media)
 
@@ -69,7 +74,7 @@ async def delete_draft_recipe(request: Request, user: ValidUser) -> MessageRespo
 
 @api_v1_router.get('/login')
 async def login(request: Request):
-    client: OAuth1Client = request.app.state.oauth.auth0
+    client: Any = request.app.state.oauth.auth0
     return await client.authorize_redirect(request, request.app.state.settings.oidc_redirect_uri)
 
 @api_v1_router.get('/whoami')
@@ -108,12 +113,15 @@ async def lifespan(app: FastAPI, settings: Settings):
             },
             server_metadata_url=f'https://{settings.oidc_domain}/.well-known/openid-configuration'
     )
+    app.state.llm_recipe_service = AnthropicRecipeService(
+        settings, app.state.storage_repository
+    )
     configure_logging(settings)
     yield
     print("Shutting down")
 
 def create_app() -> FastAPI:
-    settings = Settings()
+    settings = Settings.model_validate({})
     app = FastAPI(
         title="Wasfeines API",
         description="API for Wasfeines",

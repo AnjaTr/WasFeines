@@ -12,6 +12,8 @@ import boto3
 from botocore.config import Config
 if TYPE_CHECKING:
     from mypy_boto3_s3.client import S3Client
+    from mypy_boto3_s3.type_defs import ListObjectsV2OutputTypeDef
+
 
 from wasfeines.models.recipe import Recipe, Media
 from wasfeines.models.draft import DraftMedia
@@ -26,19 +28,19 @@ class StorageRepository(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def put_recipe_sync(self, recipe: DraftRecipe) -> Recipe:
+    def put_recipe_sync(self, recipe: DraftRecipe, media: List[DraftMedia], recipe_html: str) -> Recipe:
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_recipe_sync(self, id: str) -> Recipe:
+    def delete_recipe_sync(self, id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_draft_media_sync(self) -> List[DraftMedia]:
+    def get_draft_media_sync(self, user_id: str) -> List[DraftMedia]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_draft_recipe_sync(self, user_id: str) -> DraftRecipe:
+    def get_draft_recipe_sync(self, user_id: str) -> Optional[DraftRecipe]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -53,11 +55,11 @@ class StorageRepository(ABC):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self.list_recipes_sync)
 
-    async def put_recipe(self, recipe: DraftRecipe) -> Recipe:
+    async def put_recipe(self, recipe: DraftRecipe, media: List[DraftMedia], recipe_html: str) -> Recipe:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, self.put_recipe_sync, recipe)
+        return await loop.run_in_executor(None, self.put_recipe_sync, recipe, media, recipe_html)
 
-    async def delete_recipe(self, id: str) -> Recipe:
+    async def delete_recipe(self, id: str) -> None:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self.delete_recipe_sync, id)
 
@@ -65,7 +67,7 @@ class StorageRepository(ABC):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self.get_draft_media_sync, user_id)
 
-    async def get_draft_recipe(self, user_id: str) -> DraftRecipe:
+    async def get_draft_recipe(self, user_id: str) -> Optional[DraftRecipe]:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self.get_draft_recipe_sync, user_id)
 
@@ -100,7 +102,7 @@ class S3StorageRepository(StorageRepository):
             region_name=settings.s3_region,
         )
 
-    def _load_item(self, key_html: str, objects: List) -> Recipe:
+    def _load_item(self, key_html: str, objects: "ListObjectsV2OutputTypeDef") -> Recipe:
         """
         Given a recipe key, for example "recipe_Peanut_Protein_Balls.html", return the full recipe object
 
@@ -114,9 +116,13 @@ class S3StorageRepository(StorageRepository):
         )
         key_noext = key_html[:-5]
         media = []
+        if "Contents" not in objects:
+            raise ValueError(f"Recipe {key_html} not found in S3")
         for obj_inner in objects["Contents"]:
+            if "Key" not in obj_inner:
+                continue
             key_inner = obj_inner["Key"]
-            if key_inner.startswith(key_noext) and is_media(key_inner):
+            if key_inner.startswith(f"{key_noext}/"):
                 key_inner_presigned = self.s3.generate_presigned_url(
                     "get_object",
                     Params={
@@ -130,6 +136,8 @@ class S3StorageRepository(StorageRepository):
                 )
         summary = None
         for obj_inner in objects["Contents"]:
+            if "Key" not in obj_inner:
+                continue
             key_inner = obj_inner["Key"]
             if key_inner == f"{key_noext}.json":
                 contents = self.s3.get_object(
@@ -149,38 +157,67 @@ class S3StorageRepository(StorageRepository):
             Bucket=self.settings.s3_bucket, Prefix=self.settings.s3_bucket_base_path
         )
         recipes = []
+        if "Contents" not in objects:
+            return recipes
         for obj in objects["Contents"]:
+            if "Key" not in obj:
+                continue
             key = obj["Key"]
             if key.endswith(".html"):
                 recipes.append(self._load_item(key, objects))
         return recipes
 
-    def put_recipe_sync(self, recipe: DraftRecipe) -> Recipe:
-        key = Path(self.settings.s3_bucket_base_path) / f"{recipe.name}.html"
+    def put_recipe_sync(self, recipe: DraftRecipe, media: List[DraftMedia], recipe_html: str) -> Recipe:
+        html_key = Path(self.settings.s3_bucket_base_path) / f"{recipe.name}.html"
         self.s3.put_object(
             Bucket=self.settings.s3_bucket,
-            Key=str(key),
-            Body=recipe.content,
+            Key=str(html_key),
+            Body=recipe_html,
             ContentType="text/html",
         )
-        return Recipe(
-            name=recipe.name,
-            content_url=self.s3.generate_presigned_url(
-                "get_object",
-                Params={"Bucket": self.settings.s3_bucket, "Key": str(key)},
-                ExpiresIn=3600,
-            ),
-            media=[],
+        for media_item in media:
+            if not media_item.exists:
+                continue
+            dest_media_key = Path(self.settings.s3_bucket_base_path) / f"{recipe.name}/{media_item.name}"
+            self.s3.copy_object(
+                Bucket=self.settings.s3_bucket,
+                CopySource={
+                    "Bucket": self.settings.s3_bucket,
+                    "Key": media_item.key
+                },
+                Key=str(dest_media_key),
+            )
+        json_key = Path(self.settings.s3_bucket_base_path) / f"{recipe.name}.json"
+        recipe_dict = asdict(recipe)
+        self.s3.put_object(
+            Bucket=self.settings.s3_bucket,
+            Key=str(json_key),
+            Body=json.dumps(recipe_dict, default=str),
+            ContentType="application/json",
         )
+        list_objects = self.s3.list_objects_v2(
+            Bucket=self.settings.s3_bucket, Prefix=str(html_key)
+        )
+        return self._load_item(str(html_key), list_objects)
     
-    def delete_recipe_sync(self, id: str) -> Recipe:
-        key = Path(self.settings.s3_bucket_base_path) / f"{id}.html"
-        self.s3.delete_object(Bucket=self.settings.s3_bucket, Key=str(key))
-        return Recipe(
-            name=id,
-            content_url="",
-            media=[],
+    def delete_recipe_sync(self, id: str) -> None:
+        html_key = Path(self.settings.s3_bucket_base_path) / f"{id}.html"
+        json_key = Path(self.settings.s3_bucket_base_path) / f"{id}.json"
+        folder_key = Path(self.settings.s3_bucket_base_path) / f"{id}/"
+        self.s3.delete_object(Bucket=self.settings.s3_bucket, Key=str(html_key))
+        self.s3.delete_object(Bucket=self.settings.s3_bucket, Key=str(json_key))
+        objects = self.s3.list_objects_v2(
+            Bucket=self.settings.s3_bucket, Prefix=str(folder_key)
         )
+        if "Contents" not in objects:
+            return
+        for obj in objects["Contents"]:
+            if "Key" not in obj:
+                continue
+            key = obj["Key"]
+            if key == folder_key:
+                continue
+            self.s3.delete_object(Bucket=self.settings.s3_bucket, Key=str(key))
 
     def _get_presigned_get_put_urls(self, key: str) -> tuple[str, str, str]:
         get_url = self.s3.generate_presigned_url(
@@ -207,12 +244,18 @@ class S3StorageRepository(StorageRepository):
         )
         draft_media = []
         if existing_objects["KeyCount"] > 0:
+            assert "Contents" in existing_objects
             for obj in existing_objects["Contents"]:
+                if "Key" not in obj:
+                    continue
+                assert "LastModified" in obj
                 key_inner = obj["Key"]
                 get_url, put_url, delete_url = self._get_presigned_get_put_urls(key_inner)
                 draft_media.append(
                     DraftMedia(
                         exists=True,
+                        name=key_inner.split("/")[-1],
+                        key=key_inner,
                         get_url=get_url,
                         put_url=put_url,
                         delete_url=delete_url,
@@ -226,6 +269,8 @@ class S3StorageRepository(StorageRepository):
             draft_media.append(
                 DraftMedia(
                     exists=False,
+                    key=str(key),
+                    name=uuid,
                     get_url=get_url,
                     put_url=put_url,
                 )
@@ -246,14 +291,15 @@ class S3StorageRepository(StorageRepository):
 
     def put_draft_recipe_sync(self, user_id: str, recipe: DraftRecipeRequestModel) -> DraftRecipe:
         key = Path(self.settings.s3_bucket_base_path) / self.settings.s3_draft_folder / f"{user_id}-draft.json"
-        json_dict = asdict(recipe.to_draft_recipe(created_by=user_id))
+        draft_recipe = recipe.to_draft_recipe(created_by=user_id)
+        json_dict = asdict(draft_recipe)
         self.s3.put_object(
             Bucket=self.settings.s3_bucket,
             Key=str(key),
             Body=json.dumps(json_dict, default=str),
             ContentType="application/json",
         )
-        return self.get_draft_recipe_sync(user_id)
+        return draft_recipe
 
     def delete_draft_recipe_sync(self, user_id):
         key = Path(self.settings.s3_bucket_base_path) / self.settings.s3_draft_folder / f"{user_id}-draft.json"
