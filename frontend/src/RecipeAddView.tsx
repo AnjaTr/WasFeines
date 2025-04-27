@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 
-import { Box, Chip, CircularProgress, Fab, ImageListItemBar, InputAdornment, Skeleton, TextField, Typography } from "@mui/material"
+import { Box, Chip, CircularProgress, Fab, ImageListItemBar, InputAdornment, Rating, Skeleton, TextField, Typography } from "@mui/material"
 import ImageList from '@mui/material/ImageList';
 import ImageListItem from '@mui/material/ImageListItem';
 import { styled } from '@mui/material/styles';
@@ -42,6 +42,7 @@ export const RecipeAddView: React.FC<RecipeAddViewProps> = () => {
     const [tags, setTags] = useState<string[]>([])
     const [rating, setRating] = useState<number>(0)
     const [inputValue, setInputValue] = useState("");
+    const [comment, setComment] = useState<string>("")
 
     useEffect(() => {
         if (data?.name) {
@@ -55,6 +56,9 @@ export const RecipeAddView: React.FC<RecipeAddViewProps> = () => {
         }
         if (data?.ratings && data.ratings.length > 0) {
             setRating(data.ratings[0].rating)
+        }
+        if (data?.ratings && data.ratings.length > 0 && data.ratings[0].comment) {
+            setComment(data.ratings[0].comment)
         }
     }, [data?.user_content, data?.user_tags, data?.ratings, data?.name])
 
@@ -72,8 +76,6 @@ export const RecipeAddView: React.FC<RecipeAddViewProps> = () => {
                     ...new_
                 }
             })
-            //draftRecipeQuery.refetch()
-
         }, 800), [mutateAsync, name, description, tags, data?.ratings])
 
     const handleKeyDown = (e) => {
@@ -245,6 +247,45 @@ export const RecipeAddView: React.FC<RecipeAddViewProps> = () => {
                 }
             }}
         />
+        <Box sx={{ marginTop: "20px" }}>
+            <TextField
+                label="Comment and Rating"
+                value={comment}
+                variant="outlined"
+                fullWidth
+                multiline
+                onBlur={() => {
+                    if (!isMutatePending) {
+                        debouncedUpdate({ user_rating: { rating: rating, comment: comment } })
+                    }
+                }}
+                onChange={(event) => {
+                    setComment(event.target.value)
+                    if (!isMutatePending) {
+                        debouncedUpdate({ user_rating: { rating: rating, comment: event.target.value } })
+                    }
+                }}
+                slotProps={{
+                    input: {
+                        endAdornment: isMutatePending ? (<InputAdornment position="end">
+                            <CircularProgress size={18} />
+                        </InputAdornment>) : null,
+                    }
+                }}
+            />
+            <Rating
+                name="simple-controlled"
+                value={rating}
+                onChange={(event, newValue) => {
+                    setRating(newValue);
+                    debouncedUpdate({ user_rating: { rating: newValue, comment: comment } })
+                }}
+                precision={0.5}
+                sx={{ padding: "10px"}}
+                emptyIcon={<span style={{ color: "#ddd" }}>☆</span>}
+                icon={<span style={{ color: "#f39c12" }}>★</span>}
+            />
+        </Box>
 
         <Fab
             sx={{ position: "fixed", bottom: 16, right: 16 }}
