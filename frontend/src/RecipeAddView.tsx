@@ -11,6 +11,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { Create } from "@mui/icons-material";
 import debounce from "lodash.debounce";
 import { components } from "./api/schema";
+import { useGenerate } from "./api/useGenerate";
+import { useNavigate } from "react-router";
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -29,9 +31,11 @@ type RecipeAddViewProps = {
 }
 
 export const RecipeAddView: React.FC<RecipeAddViewProps> = () => {
+    const navigate = useNavigate();
     const draftRecipeQuery = useDraftRecipe()
     const { data, isLoading } = draftRecipeQuery;
     const { data: mutateData, isPending: isMutatePending, mutateAsync } = useMutateDraftRecipe();
+    const { mutateAsync: generateRecipe, isPending: isGeneratePending } = useGenerate();
     const [isUploadInProgress, setIsUploadInProgress] = useState<boolean>(false)
     const sortedExistingDraftMedia = data?.draft_media.filter((item) => item.exists).sort((a, b) => {
         return (b.create_timestamp ?? 0) - (a.create_timestamp ?? 0)
@@ -287,14 +291,16 @@ export const RecipeAddView: React.FC<RecipeAddViewProps> = () => {
                 icon={<span style={{ color: "#f39c12" }}>★</span>}
             />
         </Box>
-
         <Fab
             sx={{ position: "fixed", bottom: 16, right: 16 }}
+            
             color="primary"
             onClick={async () => {
-                // asd
+                await generateRecipe({})
+                navigate("/")
             }}
-            disabled={!isCreateRecipeEnabled || isMutatePending} variant="extended">
+            disabled={!isCreateRecipeEnabled || isMutatePending || isGeneratePending} variant="extended">
+            {isGeneratePending && <CircularProgress size={18} sx={{ mr: 1 }} />}
             <Create sx={{ mr: 1 }} />
             Create
         </Fab>

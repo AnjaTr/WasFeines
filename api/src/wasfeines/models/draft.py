@@ -23,7 +23,7 @@ class DraftRecipeResponseModel:
 
 @dataclass(kw_only=True)
 class DraftRecipe:
-    name: str
+    name: Optional[str]
     key: Optional[str]
     created_by: str
     user_content: Optional[str]

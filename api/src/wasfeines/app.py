@@ -35,6 +35,17 @@ async def get_recipes(request: Request, user: ValidUser) -> List[Recipe]:
     repo: S3StorageRepository = request.app.state.storage_repository
     return await repo.list_recipes()
 
+@api_v1_router.delete("/recipes", response_model=MessageResponse, responses={
+    404: { "model": MessageResponse, "description": "Recipe not found" },
+})
+# Recipe name is a query parameter
+async def delete_recipe(request: Request, user: ValidUser, recipe_name: str) -> MessageResponse | JSONResponse:
+    repo: S3StorageRepository = request.app.state.storage_repository
+    delete_success = await repo.delete_recipe(recipe_name)
+    if not delete_success:
+        return JSONResponse(status_code=404, content={"detail": "Recipe not found"})
+    return MessageResponse(detail="Recipe deleted successfully")
+
 @api_v1_router.get("/draftmedia")
 async def get_draft(request: Request, user: ValidUser) -> List[DraftMedia]:
     repo: S3StorageRepository = request.app.state.storage_repository
@@ -71,6 +82,27 @@ async def delete_draft_recipe(request: Request, user: ValidUser) -> MessageRespo
     if draft_recipe is None:
         return JSONResponse(status_code=404, content={"detail": "Draft recipe not found"})
     return MessageResponse(detail="Draft recipe deleted successfully")
+
+@api_v1_router.post('/generate', response_model=Recipe, responses={
+    404: { "model": MessageResponse, "description": "Draft recipe not found" },
+})
+async def generate_recipe(request: Request, user: ValidUser) -> Recipe | JSONResponse:
+    repo: S3StorageRepository = request.app.state.storage_repository
+    draft_media = await repo.get_draft_media(user.email)
+    draft_recipe = await repo.get_draft_recipe(user.email)
+    if draft_recipe is None:
+        return JSONResponse(status_code=404, content={"detail": "Draft recipe not found"})
+    recipe_service: AnthropicRecipeService = request.app.state.llm_recipe_service
+    summary_dict, html = recipe_service.generate_recipe_html_sync(draft_recipe, draft_media)
+    if not draft_recipe.name:
+        draft_recipe.name = summary_dict["name"]
+    recipe = await repo.put_recipe(
+        recipe=draft_recipe,
+        media=draft_media,
+        recipe_html=html,
+    )
+    await repo.delete_draft_recipe(user_id=user.email)
+    return recipe
 
 @api_v1_router.get('/login')
 async def login(request: Request):

@@ -15,7 +15,8 @@ export interface paths {
         get: operations["get_recipes_api_v1_recipes_get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Recipe */
+        delete: operations["delete_recipe_api_v1_recipes_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -52,6 +53,23 @@ export interface paths {
         post: operations["post_draft_recipe_api_v1_draftrecipe_post"];
         /** Delete Draft Recipe */
         delete: operations["delete_draft_recipe_api_v1_draftrecipe_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Recipe */
+        post: operations["generate_recipe_api_v1_generate_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -117,6 +135,10 @@ export interface components {
         DraftMedia: {
             /** Exists */
             exists: boolean;
+            /** Name */
+            name: string;
+            /** Key */
+            key: string;
             /** Get Url */
             get_url: string;
             /** Put Url */
@@ -253,6 +275,46 @@ export interface operations {
             };
         };
     };
+    delete_recipe_api_v1_recipes_delete: {
+        parameters: {
+            query: {
+                recipe_name: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Recipe not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_draft_api_v1_draftmedia_get: {
         parameters: {
             query?: never;
@@ -289,15 +351,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DraftRecipeResponseModel"];
-                };
-            };
-            /** @description Draft recipe not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MessageResponse"];
                 };
             };
         };
@@ -351,6 +404,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Draft recipe not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+        };
+    };
+    generate_recipe_api_v1_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"];
                 };
             };
             /** @description Draft recipe not found */

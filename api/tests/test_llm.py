@@ -17,9 +17,13 @@ async def test_anthropic_recipe_service(app):
         recipe_service: LLMRecipeService = app.state.llm_recipe_service
         summary_dict, html = recipe_service.generate_recipe_html_sync(draft_recipe, draft_media)
         assert html is not None
+        if not draft_recipe.name:
+            draft_recipe.name = summary_dict["name"]
         recipe = await repo.put_recipe(
             recipe=draft_recipe,
             media=draft_media,
             recipe_html=html,
         )
         assert recipe is not None
+        import ipdb; ipdb.set_trace()
+        await repo.delete_recipe(recipe.name)

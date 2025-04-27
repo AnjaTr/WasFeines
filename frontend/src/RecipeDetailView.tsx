@@ -5,6 +5,7 @@ import { Box, Button } from "@mui/material";
 import Skeleton from "@mui/material/Skeleton";
 import { ArrowBackIosNew } from "@mui/icons-material";
 import { useEffect, useState } from "react";
+import { useDeleteRecipe } from "./api/useDeleteRecipe";
 
 export type RecipeDetailViewRouteParams = {
     recipeId: string;
@@ -25,6 +26,7 @@ export const RecipeDetailView: React.FC = ({ }) => {
     const [recipeHtml, setRecipeHtml] = useState<string>("");
     const navigate = useNavigate();
     const recipe = state.recipes[parseInt(recipeId)];
+    const { mutateAsync: deleteRecipe, isPending: isDeletePending } = useDeleteRecipe();
 
     useEffect(() => {
         async function fetchRecipe() {
@@ -55,6 +57,18 @@ export const RecipeDetailView: React.FC = ({ }) => {
                 {recipe && recipe.media.map((media, index) => (
                     <Box key={index}>
                         <img src={media.content_url} alt="Media" style={{ width: "100%" }} />
+                    </Box>
+                ))}
+            </Box>
+            <Box sx={{ marginTop: "10px"}}>
+                {recipe && recipe.media.map((media, index) => (
+                    <Box key={index}>
+                        <Button variant="contained" color="error" onClick={async () => {
+                            await deleteRecipe({ params: { query: { recipe_name: recipe.name } } });
+                            navigate(-1);
+                        }} disabled={isDeletePending}>
+                            Delete Recipe
+                        </Button>
                     </Box>
                 ))}
             </Box>

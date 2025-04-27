@@ -32,7 +32,7 @@ class StorageRepository(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_recipe_sync(self, id: str) -> None:
+    def delete_recipe_sync(self, id: str) -> bool:
         raise NotImplementedError()
 
     @abstractmethod
@@ -59,7 +59,7 @@ class StorageRepository(ABC):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self.put_recipe_sync, recipe, media, recipe_html)
 
-    async def delete_recipe(self, id: str) -> None:
+    async def delete_recipe(self, id: str) -> bool:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self.delete_recipe_sync, id)
 
@@ -168,7 +168,8 @@ class S3StorageRepository(StorageRepository):
         return recipes
 
     def put_recipe_sync(self, recipe: DraftRecipe, media: List[DraftMedia], recipe_html: str) -> Recipe:
-        html_key = Path(self.settings.s3_bucket_base_path) / f"{recipe.name}.html"
+        id = f"{recipe.name}.html"
+        html_key = Path(self.settings.s3_bucket_base_path) / id
         self.s3.put_object(
             Bucket=self.settings.s3_bucket,
             Key=str(html_key),
@@ -198,19 +199,21 @@ class S3StorageRepository(StorageRepository):
         list_objects = self.s3.list_objects_v2(
             Bucket=self.settings.s3_bucket, Prefix=str(html_key)
         )
-        return self._load_item(str(html_key), list_objects)
+        return self._load_item(id, list_objects)
     
-    def delete_recipe_sync(self, id: str) -> None:
-        html_key = Path(self.settings.s3_bucket_base_path) / f"{id}.html"
-        json_key = Path(self.settings.s3_bucket_base_path) / f"{id}.json"
-        folder_key = Path(self.settings.s3_bucket_base_path) / f"{id}/"
-        self.s3.delete_object(Bucket=self.settings.s3_bucket, Key=str(html_key))
+    def delete_recipe_sync(self, id: str) -> bool:
+        html_key = f"{id}.html"
+        json_key = f"{id}.json"
+        folder_key = f"{id}/"
+        resp = self.s3.delete_object(Bucket=self.settings.s3_bucket, Key=str(html_key))
+        if resp["ResponseMetadata"]["HTTPStatusCode"] != 204:
+            return False
         self.s3.delete_object(Bucket=self.settings.s3_bucket, Key=str(json_key))
         objects = self.s3.list_objects_v2(
             Bucket=self.settings.s3_bucket, Prefix=str(folder_key)
         )
         if "Contents" not in objects:
-            return
+            return True
         for obj in objects["Contents"]:
             if "Key" not in obj:
                 continue
@@ -218,6 +221,7 @@ class S3StorageRepository(StorageRepository):
             if key == folder_key:
                 continue
             self.s3.delete_object(Bucket=self.settings.s3_bucket, Key=str(key))
+        return True
 
     def _get_presigned_get_put_urls(self, key: str) -> tuple[str, str, str]:
         get_url = self.s3.generate_presigned_url(
