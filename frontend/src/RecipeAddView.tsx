@@ -34,7 +34,7 @@ export const RecipeAddView: React.FC<RecipeAddViewProps> = () => {
     const navigate = useNavigate();
     const draftRecipeQuery = useDraftRecipe()
     const { data, isLoading } = draftRecipeQuery;
-    const { data: mutateData, isPending: isMutatePending, mutateAsync } = useMutateDraftRecipe();
+    const { isPending: isMutatePending, mutateAsync } = useMutateDraftRecipe();
     const { mutateAsync: generateRecipe, isPending: isGeneratePending } = useGenerate();
     const [isUploadInProgress, setIsUploadInProgress] = useState<boolean>(false)
     const sortedExistingDraftMedia = data?.draft_media.filter((item) => item.exists).sort((a, b) => {
@@ -66,34 +66,33 @@ export const RecipeAddView: React.FC<RecipeAddViewProps> = () => {
         }
     }, [data?.user_content, data?.user_tags, data?.ratings, data?.name])
 
-    const debouncedUpdate = useMemo(() =>
-        debounce(async (new_: Partial<components["schemas"]["RatingRequestModel"]>) => {
-            await mutateAsync({
-                body: {
-                    name: name ?? data?.name ?? "",
-                    user_content: description ?? data?.user_content ?? null,
-                    user_tags: tags ?? data?.user_tags ?? null,
-                    user_rating: (data?.ratings && data?.ratings.length > 0) ? {
-                        rating: data?.ratings[0].rating,
-                        comment: data?.ratings[0].comment
-                    } : null,
-                    ...new_
-                }
-            })
-        }, 800), [mutateAsync, name, description, tags, data?.ratings])
+    const update = async (new_: Partial<components["schemas"]["DraftRecipeRequestModel"]>) => {
+        await mutateAsync({
+            body: {
+                name: name ?? data?.name ?? "",
+                user_content: description ?? data?.user_content ?? null,
+                user_tags: tags ?? data?.user_tags ?? null,
+                user_rating: (data?.ratings && data?.ratings.length > 0) ? {
+                    rating: data?.ratings[0].rating,
+                    comment: data?.ratings[0].comment
+                } : null,
+                ...new_
+            }
+        })
+    }
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && inputValue.trim() !== '') {
             e.preventDefault();
             setTags([...tags, inputValue.trim()]);
             setInputValue('');
-            debouncedUpdate({ user_tags: [...tags, inputValue.trim()] })
+            update({ user_tags: [...tags, inputValue.trim()] })
         }
     };
 
     const handleDelete = (tagToDelete: string) => {
         setTags(tags.filter(tag => tag !== tagToDelete));
-        debouncedUpdate({ user_tags: tags.filter(tag => tag !== tagToDelete) })
+        update({ user_tags: tags.filter(tag => tag !== tagToDelete) })
     };
 
 
@@ -192,14 +191,11 @@ export const RecipeAddView: React.FC<RecipeAddViewProps> = () => {
             helperText="Leave empty for it to be generated"
             onBlur={() => {
                 if (!isMutatePending) {
-                    debouncedUpdate({ name: name })
+                    update({ name: name })
                 }
             }}
             onChange={(event) => {
                 setName(event.target.value)
-                if (!isMutatePending) {
-                    debouncedUpdate({ name: event.target.value })
-                }
             }}
             slotProps={{
                 input: {
@@ -235,14 +231,11 @@ export const RecipeAddView: React.FC<RecipeAddViewProps> = () => {
             sx={{ marginTop: "20px" }}
             onBlur={() => {
                 if (!isMutatePending) {
-                    debouncedUpdate({ user_content: description })
+                    update({ user_content: description })
                 }
             }}
             onChange={(event) => {
                 setDescription(event.target.value)
-                if (!isMutatePending) {
-                    debouncedUpdate({ user_content: event.target.value })
-                }
             }}
             slotProps={{
                 input: {
@@ -261,14 +254,11 @@ export const RecipeAddView: React.FC<RecipeAddViewProps> = () => {
                 multiline
                 onBlur={() => {
                     if (!isMutatePending) {
-                        debouncedUpdate({ user_rating: { rating: rating, comment: comment } })
+                        update({ user_rating: { rating: rating, comment: comment } })
                     }
                 }}
                 onChange={(event) => {
                     setComment(event.target.value)
-                    if (!isMutatePending) {
-                        debouncedUpdate({ user_rating: { rating: rating, comment: event.target.value } })
-                    }
                 }}
                 slotProps={{
                     input: {
@@ -283,7 +273,7 @@ export const RecipeAddView: React.FC<RecipeAddViewProps> = () => {
                 value={rating}
                 onChange={(event, newValue) => {
                     setRating(newValue);
-                    debouncedUpdate({ user_rating: { rating: newValue, comment: comment } })
+                    update({ user_rating: { rating: newValue, comment: comment } })
                 }}
                 precision={0.5}
                 sx={{ padding: "10px"}}

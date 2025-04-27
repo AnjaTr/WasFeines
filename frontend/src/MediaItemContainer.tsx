@@ -43,8 +43,8 @@ export const MediaItemContainer: React.FC<any> = ({ item }) => {
           position: "absolute", bottom: "3%", width: "85%", left: 0, right: 0, margin: "auto", padding: "10px"
         }}>
           <Box sx={{}}>
-            <Typography variant="h6" sx={{ paddingRight: "4px" }}>{item.summary.title}</Typography>
-            {item.summary.added_by && <Typography variant="body2">Added by: {item.summary.added_by}</Typography>}
+            <Typography variant="h6" sx={{ paddingRight: "4px" }}>{item.summary.name}</Typography>
+            {item.summary.created_by && <Typography variant="body2">Added by: {item.summary.created_by}</Typography>}
             {item.summary.created_at && (
               <Typography variant="body2">
                 Created at: {new Intl.DateTimeFormat(navigator.language, {
@@ -54,7 +54,7 @@ export const MediaItemContainer: React.FC<any> = ({ item }) => {
                 )}</Typography>
             )}
           </Box>
-          <CompoundRating summary={item.summary} />
+          {item.summary.ratings && <CompoundRating summary={item.summary.ratings} /> }
           <Typography variant="body1">{item.summary.description}</Typography>
           {item.summary.tags && item.summary.tags.map((tag: string, index: number) => {
             return <Chip key={index} label={tag} variant="outlined" sx={{ marginTop: "6px", marginRight: "4px" }} />

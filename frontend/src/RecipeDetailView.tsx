@@ -6,6 +6,7 @@ import Skeleton from "@mui/material/Skeleton";
 import { ArrowBackIosNew } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { useDeleteRecipe } from "./api/useDeleteRecipe";
+import { useRecipes } from "./api/useRecipes";
 
 export type RecipeDetailViewRouteParams = {
     recipeId: string;
@@ -22,20 +23,19 @@ const RecipeDetailViewSkeleton: React.FC = () => <Box sx={{ padding: "0 20px" }}
 
 export const RecipeDetailView: React.FC = ({ }) => {
     const { recipeId } = useParams<RecipeDetailViewRouteParams>();
-    const { state } = useRecipeContext();
+    const { data: recipes, isLoading} = useRecipes();
     const [recipeHtml, setRecipeHtml] = useState<string>("");
     const navigate = useNavigate();
-    const recipe = state.recipes[parseInt(recipeId)];
     const { mutateAsync: deleteRecipe, isPending: isDeletePending } = useDeleteRecipe();
+    const maybeRecipe = recipes && recipeId ? recipes[parseInt(recipeId)] : null;
 
     useEffect(() => {
         async function fetchRecipe() {
-            const response = await fetch(recipe.content_url);
+            const response = await fetch(maybeRecipe!.content_url);
             const html = await response.text();
             setRecipeHtml(html)
-            console.log(recipe)
         }
-        if (recipe && recipe.content_url) {
+        if (maybeRecipe && maybeRecipe.content_url) {
             fetchRecipe();
         }
     }, [recipeId]);
@@ -54,17 +54,17 @@ export const RecipeDetailView: React.FC = ({ }) => {
                 }
             </Box>
             <Box sx={{ marginTop: "10px"}}>
-                {recipe && recipe.media.map((media, index) => (
+                {maybeRecipe && maybeRecipe.media.map((media, index) => (
                     <Box key={index}>
                         <img src={media.content_url} alt="Media" style={{ width: "100%" }} />
                     </Box>
                 ))}
             </Box>
             <Box sx={{ marginTop: "10px"}}>
-                {recipe && recipe.media.map((media, index) => (
+                {maybeRecipe && maybeRecipe.media.map((media, index) => (
                     <Box key={index}>
                         <Button variant="contained" color="error" onClick={async () => {
-                            await deleteRecipe({ params: { query: { recipe_name: recipe.name } } });
+                            await deleteRecipe({ params: { query: { recipe_name: maybeRecipe.name } } });
                             navigate(-1);
                         }} disabled={isDeletePending}>
                             Delete Recipe
